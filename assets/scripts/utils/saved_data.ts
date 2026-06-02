@@ -18,7 +18,6 @@ type SaveDataResult =
 
 export interface SavableData {
     version: number;
-    migrateToNextVersion(): void;
 }
 
 export interface DataStorageBackend<Key> {
@@ -33,12 +32,24 @@ export abstract class DataStorage<Key, Data extends SavableData> {
     private readonly key: Key;
     private readonly version: number;
     private readonly backend: DataStorageBackend<Key>;
+    private readonly increaseVersionHandler: ((dat: Data) => void) | null;
     private isInitialized: boolean = false;
 
-    constructor(key: Key, version: number, backend: DataStorageBackend<Key>) {
+    constructor({
+        key,
+        version,
+        backend,
+        increaseVersionHandler,
+    }: {
+        key: Key;
+        version: number;
+        backend: DataStorageBackend<Key>;
+        increaseVersionHandler?: (dat: Data) => void;
+    }) {
         this.key = key;
         this.version = version;
         this.backend = backend;
+        this.increaseVersionHandler = increaseVersionHandler ?? null;
     }
     public async init(): Promise<boolean> {
         this.isInitialized = false;
@@ -47,12 +58,14 @@ export abstract class DataStorage<Key, Data extends SavableData> {
         switch (rawData.type) {
             case OperationResultFields.NotFound: {
                 this.data = this.getDefaultData();
-                Assertion.that(
-                    this.data.version <= this.version,
-                    "Don't know what to do with default data, version too high",
-                );
-                while (this.data.version < this.version) {
-                    this.data.migrateToNextVersion();
+                if (this.increaseVersionHandler) {
+                    Assertion.that(
+                        this.data.version <= this.version,
+                        "Don't know what to do with default data, version too high",
+                    );
+                    while (this.data.version < this.version) {
+                        this.increaseVersionHandler(this.data);
+                    }
                 }
                 this.isInitialized = true;
                 return true;
@@ -64,14 +77,19 @@ export abstract class DataStorage<Key, Data extends SavableData> {
                 return false;
             case OperationResultFields.Ok:
                 try {
+                    // TODO: This is weird because Data is actually a class
+                    // We need to actually construct the instance from raw data
+                    // Maybe require a `fromRaw(rawData)` for Data?
                     const data = JSON.parse(`${rawData.data}`) as Data;
-                    Assertion.that(
-                        data.version <= this.version,
-                        "Don't know what to do with loaded data, version too high",
-                    );
                     this.data = data;
-                    while (this.data.version < this.version) {
-                        this.data.migrateToNextVersion();
+                    if (this.increaseVersionHandler) {
+                        Assertion.that(
+                            data.version <= this.version,
+                            "Don't know what to do with loaded data, version too high",
+                        );
+                        while (this.data.version < this.version) {
+                            this.increaseVersionHandler(this.data);
+                        }
                     }
                     this.isInitialized = true;
                     return true;
@@ -116,7 +134,7 @@ export class DataStorageLocalStorageBackend<
     public getRawData(key: Key): Promise<GetDataResult<unknown>> {
         try {
             const value = localStorage.getItem(`${key}`);
-            if (value === undefined) {
+            if (value === null) {
                 return Promise.resolve({
                     type: OperationResultFields.NotFound,
                 });

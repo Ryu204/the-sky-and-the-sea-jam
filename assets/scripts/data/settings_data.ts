@@ -1,36 +1,41 @@
-import {
-    DataStorage,
-    DataStorageBackend,
-    SavableData,
-} from "../utils/saved_data";
+import { DataStorage, DataStorageBackend } from "../utils/saved_data";
+import { SoundClipMode } from "./sound_mode";
 
-class SettingsData implements SavableData {
-    public static readonly VERSION = 1;
-    public version = SettingsData.VERSION;
-    public musicPercent!: number;
-    public soundPercent!: number;
+const VERSION = 1 as const;
 
-    constructor(data: Pick<SettingsData, "musicPercent" | "soundPercent">) {
-        for (const key of Object.keys(data) as (keyof typeof data)[]) {
-            this[key] = data[key];
-        }
+type SettingsData = {
+    version: typeof VERSION;
+    musicPercent: number;
+    soundPercent: number;
+    soundMode: SoundClipMode;
+};
+
+function increaseDataVersion(data: SettingsData) {
+    if (data.version >= VERSION) return;
+    switch (data.version) {
+        default:
+            break;
     }
-
-    public migrateToNextVersion(): void {
-        switch (this.version) {
-            default:
-                return;
-        }
-    }
+    ++data.version;
 }
 
 export class SettingsDataStorage<Key> extends DataStorage<Key, SettingsData> {
     constructor(key: Key, backend: DataStorageBackend<Key>) {
-        super(key, SettingsData.VERSION, backend);
+        super({
+            key,
+            version: VERSION,
+            backend,
+            increaseVersionHandler: increaseDataVersion,
+        });
     }
 
     public override getDefaultData(): SettingsData {
-        return new SettingsData({ musicPercent: 100, soundPercent: 100 });
+        return {
+            version: VERSION,
+            musicPercent: 100,
+            soundPercent: 100,
+            soundMode: SoundClipMode.Stereo,
+        };
     }
 
     public getMusicPercent() {
@@ -47,5 +52,13 @@ export class SettingsDataStorage<Key> extends DataStorage<Key, SettingsData> {
 
     public setSoundPercent(val: number) {
         return this.setField("soundPercent", val);
+    }
+
+    public getSoundMode() {
+        return this.readData().soundMode;
+    }
+
+    public setSoundMode(mode: SoundClipMode) {
+        return this.setField("soundMode", mode);
     }
 }

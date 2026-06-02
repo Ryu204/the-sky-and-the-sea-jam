@@ -1,10 +1,7 @@
-import { _decorator, AudioClip, Component, Node } from "cc";
+import { _decorator, AudioClip, Component } from "cc";
+import { AllDataStorage } from "../data/all_data";
+import { SoundClipMode, soundClipModeStr } from "../data/sound_mode";
 const { ccclass, property } = _decorator;
-
-export enum SoundClipMode {
-    Mono,
-    Stereo,
-}
 
 /**
  * @description Sound clip adapter with MONO and STEREO
@@ -14,14 +11,22 @@ export class AccessabilitySound extends Component {
     @property(AudioClip) public stereo: AudioClip | null = null;
     @property(AudioClip) public mono: AudioClip | null = null;
 
-    // TODO: Each data storage needs to be exposed to client code either via
-    // Singleton or Context pattern
-    // Singleton is the simplest and does not have major drawbacks to me so far
     public getClipBySettings(): AudioClip | null {
         if (!this.stereo && !this.mono) {
             console.error("No mono or stereo audio clip was assigned");
             return null;
         }
-        // const settings = ;
+        const soundMode = AllDataStorage.settings.getSoundMode();
+        const preferredClip =
+            soundMode === SoundClipMode.Mono ? this.mono : this.stereo;
+        const otherClip =
+            soundMode === SoundClipMode.Mono ? this.stereo : this.mono;
+        if (!preferredClip) {
+            console.warn(
+                `Cannot find sound of mode ${soundClipModeStr(soundMode)} in ${this.node.name}`,
+            );
+            return otherClip;
+        }
+        return preferredClip;
     }
 }
