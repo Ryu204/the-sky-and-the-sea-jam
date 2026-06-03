@@ -8,20 +8,29 @@ const { ccclass, property } = _decorator;
 export class PopupSettings extends Component {
     @property(Slider) private sliderMusicVolume!: Slider;
     @property(Slider) private sliderSoundVolume!: Slider;
+    @property(Slider) private sliderMasterVolume!: Slider;
     @property(ButtonToggle) private toggleMonoStereo!: ButtonToggle;
 
     private wasHandlerSetup = false;
 
     public init() {
+        const currentMasterVol =
+            AllDataStorage.settings.getMasterVolumePercent();
         const currentMusicVol = AllDataStorage.settings.getMusicPercent();
         const currentSoundVol = AllDataStorage.settings.getSoundPercent();
         const soundMode = AllDataStorage.settings.getSoundMode();
 
+        this.sliderMasterVolume.progress = math.clamp01(currentMasterVol / 100);
         this.sliderMusicVolume.progress = math.clamp01(currentMusicVol / 100);
         this.sliderSoundVolume.progress = math.clamp01(currentSoundVol / 100);
         this.toggleMonoStereo.selected = soundMode;
         if (!this.wasHandlerSetup) {
             const EVENT_NAME = "slide";
+            this.sliderMasterVolume.node.on(
+                EVENT_NAME,
+                this.onSliderMasterVolumeChanged,
+                this,
+            );
             this.sliderMusicVolume.node.on(
                 EVENT_NAME,
                 this.onSliderMusicVolumeChanged,
@@ -54,5 +63,10 @@ export class PopupSettings extends Component {
     private onToggleMonoStereoChanged(toggle: ButtonToggle) {
         const newMode: SoundClipMode = toggle.selected;
         AllDataStorage.settings.setSoundMode(newMode);
+    }
+
+    private onSliderMasterVolumeChanged(slider: Slider) {
+        const newPercent = Math.floor(100 * slider.progress);
+        AllDataStorage.settings.setMusicMasterVolumePercent(newPercent);
     }
 }

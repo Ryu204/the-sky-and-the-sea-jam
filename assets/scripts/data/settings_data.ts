@@ -1,18 +1,22 @@
 import { DataStorage, DataStorageBackend } from "../utils/saved_data";
 import { SoundClipMode } from "./sound_mode";
 
-const VERSION = 1 as const;
+const VERSION = 2 as const;
 
 type SettingsData = {
     version: typeof VERSION;
     musicPercent: number;
     soundPercent: number;
     soundMode: SoundClipMode;
+    masterVolumePercent: number;
 };
 
 function increaseDataVersion(data: SettingsData) {
     if (data.version >= VERSION) return;
-    switch (data.version) {
+    switch (data.version as number) {
+        case 1:
+            data.masterVolumePercent = 100;
+            break;
         default:
             break;
     }
@@ -32,10 +36,19 @@ export class SettingsDataStorage<Key> extends DataStorage<Key, SettingsData> {
     public override getDefaultData(): SettingsData {
         return {
             version: VERSION,
+            masterVolumePercent: 100,
             musicPercent: 100,
             soundPercent: 100,
             soundMode: SoundClipMode.Stereo,
         };
+    }
+
+    public getMasterVolumePercent() {
+        return this.readData().masterVolumePercent;
+    }
+
+    public setMusicMasterVolumePercent(val: number) {
+        return this.setField("masterVolumePercent", val);
     }
 
     public getMusicPercent() {
