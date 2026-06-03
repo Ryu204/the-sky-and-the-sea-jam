@@ -1,0 +1,231 @@
+// Copyright (c) 2017-2020 Xiamen Yaji Software Co., Ltd.
+CCEffect %{
+techniques:
+  - passes:
+      - vert: sprite-vs:vert
+        frag: sprite-fs:frag
+        properties:
+          {
+            pixelSize:
+              { value: 4, tooltip: "Individual pixel size", target: param1.x },
+            seaHeight: { value: 0.3, target: param1.y },
+            seaChoppy: { value: 3.3, target: param1.z },
+            seaSpeed: { value: 0.6, target: param1.w },
+            seaFreq: { value: 0.4, target: param2.x },
+            seaBase: { value: [0.0, 0.09, 0.18, 1.0], editor: { type: color } },
+            seaWaterColor:
+              { value: [0.12, 0.36, 0.18, 1.0], editor: { type: color } },
+          }
+        depthStencilState:
+          depthTest: false
+          depthWrite: false
+        blendState:
+          targets:
+            - blend: true
+              blendSrc: src_alpha
+              blendDst: one_minus_src_alpha
+              blendDstAlpha: one_minus_src_alpha
+        rasterizerState:
+          cullMode: none
+
+}%
+
+CCProgram sprite-vs %{
+precision highp float;
+#include <builtin/uniforms/cc-global>
+#if USE_LOCAL
+  #include <builtin/uniforms/cc-local>
+#endif
+in vec3 a_position;
+in vec2 a_texCoord;
+in vec4 a_color;
+
+out vec4 color;
+
+vec4 vert() {
+  vec4 pos = vec4(a_position, 1);
+  
+  #if USE_LOCAL
+    pos = cc_matWorld * pos;
+  #endif
+  
+  #if USE_PIXEL_ALIGNMENT
+    pos = cc_matView * pos;
+    pos.xyz = floor(pos.xyz);
+    pos = cc_matProj * pos;
+  #else
+    pos = cc_matViewProj * pos;
+  #endif
+  
+  color = a_color;
+  
+  return pos;
+}
+}%
+
+CCProgram sprite-fs %{
+precision highp float;
+#include <cc-global>
+
+in vec4 color;
+
+uniform MyUniform {
+  vec4 seaWaterColor;
+  vec4 param1;
+  vec4 param2;
+  vec4 seaBase;
+};
+
+#define pixelSize param1.x
+#define seaHeight param1.y
+#define seaChoppy param1.z
+#define seaSpeed param1.w
+#define seaFreq param2.x
+const int ITER_GEOMETRY = 2;
+const int ITER_FRAGMENT = 3;
+#define SEA_TIME (1.0 + cc_time.x * seaSpeed)
+#define EPSILON_NRM (0.01)
+const mat2 octave_m = mat2(1.6, 1.2, - 1.2, 1.6);
+
+float hash(vec2 p) {
+  float h = dot(p, vec2(127.1, 311.7));
+  return fract(sin(h) * 43758.5453123);
+}
+
+float noise(in vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f*f * (3.0 - 2.0 * f);
+  return - 1.0 + 2.0 * mix(mix(hash(i + vec2(0.0, 0.0)),
+  hash(i + vec2(1.0, 0.0)), u.x),
+  mix(hash(i + vec2(0.0, 1.0)),
+  hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+// lighting              
+float diffuse(vec3 n, vec3 l, float p) {
+  return pow(dot(n, l) * 0.4 + 0.6, p);
+}
+
+// Specular function is defined but NOT used (highlight removed)              
+float specular(vec3 n, vec3 l, vec3 e, float s) {
+  float nrm = (s + 8.0) / (PI * 8.0);
+  return pow(max(dot(reflect(e, n), l), 0.0), s) * nrm;
+}
+
+// sky              
+vec3 getSkyColor(vec3 e) {
+  e.y = (max(e.y, 0.0) * 0.8 + 0.2) * 0.8;
+  return vec3(pow(1.0 - e.y, 2.0), 1.0 - e.y, 0.6 + (1.0 - e.y) * 0.4) * 1.1;
+}
+
+// sea wave octave              
+float sea_octave(vec2 uv, float choppy) {
+  uv += noise(uv);
+  vec2 wv = 1.0 - abs(sin(uv));
+  vec2 swv = abs(cos(uv));
+  wv = mix(wv, swv, wv);
+  return pow(1.0 - pow(wv.x * wv.y, 0.65), choppy);
+}
+
+// Height functions              
+float sea_height(vec2 p) {
+  float freq = seaFreq;
+  float amp = seaHeight;
+  float choppy = seaChoppy;
+  vec2 uv = p; uv.x *= 0.75;
+  
+  float h = 0.0;
+  for(int i = 0; i < ITER_GEOMETRY; i ++ ) {
+    float d = sea_octave((uv + SEA_TIME) * freq, choppy);
+    d += sea_octave((uv - SEA_TIME) * freq, choppy);
+    h += d * amp;
+    uv *= octave_m; freq *= 1.9; amp *= 0.22;
+    choppy = mix(choppy, 1.0, 0.2);
+  }
+  return h;
+}
+
+float sea_height_detailed(vec2 p) {
+  float freq = seaFreq;
+  float amp = seaHeight;
+  float choppy = seaChoppy;
+  vec2 uv = p; uv.x *= 0.75;
+  
+  float h = 0.0;
+  for(int i = 0; i < ITER_FRAGMENT; i ++ ) {
+    float d = sea_octave((uv + SEA_TIME) * freq, choppy);
+    d += sea_octave((uv - SEA_TIME) * freq, choppy);
+    h += d * amp;
+    uv *= octave_m; freq *= 1.9; amp *= 0.22;
+    choppy = mix(choppy, 1.0, 0.2);
+  }
+  return h;
+}
+
+// Compute normal from height field              
+vec3 getNormal(vec3 p, float eps) {
+  vec2 xz = p.xz;
+  float h = sea_height_detailed(xz);
+  float hx = sea_height_detailed(xz + vec2(eps, 0.0));
+  float hz = sea_height_detailed(xz + vec2(0.0, eps));
+  vec3 n = normalize(vec3(h - hx, eps, h - hz));
+  return n;
+}
+
+vec3 getSeaColor(vec3 p, vec3 n, vec3 l, vec3 e) {
+  float fresnel = clamp(1.0 - dot(n, e), 0.0, 1.0);
+  fresnel = min(fresnel * fresnel * fresnel, 0.5);
+  
+  vec3 reflected = getSkyColor(reflect(e, n));
+  vec3 refracted = seaBase.xyz + diffuse(n, l, 80.0) * seaWaterColor.xyz * 0.12;
+  
+  vec3 color = mix(refracted, reflected, fresnel);
+  
+  // Attenuation based on depth below base height                        
+  float atten = max(1.0 - (seaHeight - p.y) * 0.5, 0.0);
+  color += seaWaterColor.xyz * (p.y - seaHeight) * 0.18 * atten;
+  
+  return color;
+}
+
+vec3 getPixel(vec2 coord, float time) {
+  // Pixelated UV coordinates using constant PIXEL_SIZE                                           
+  float PIXEL_SIZE = (pixelSize * cc_screenSize.y) / 360.0;
+  vec2 blockCoord = floor(coord / PIXEL_SIZE) * PIXEL_SIZE + PIXEL_SIZE * 0.5;
+  vec2 uv = blockCoord / cc_screenSize.xy;
+  
+  // Orthographic mapping: world X and Z from screen coordinates                                           
+  float aspect = cc_screenSize.x / cc_screenSize.y;
+  float range = 12.0; // World extent in X direction
+  float x = (uv.x * 2.0 - 1.0) * range;
+  float z = (uv.y * 2.0 - 1.0) * range / aspect;
+  
+  // Compute sea surface height at this point                                           
+  vec2 worldXZ = vec2(x, z);
+  float height = sea_height(worldXZ);
+  vec3 p = vec3(x, height, z);
+  
+  // Fixed viewer direction (straight up, orthographic)                                           
+  vec3 V = vec3(0.0, 1.0, 0.0);
+  // Light direction (original)                                           
+  vec3 L = normalize(vec3(0.0, 1.0, 0.8));
+  
+  // // Normal from height field                                           
+  vec3 n = getNormal(p, EPSILON_NRM);
+  
+  // // Compute sea color                                           
+  vec3 color = getSeaColor(p, n, L, V);
+  
+  return color;
+}
+
+vec4 frag() {
+  float time = cc_time.x * 0.3;
+  vec2 fragCoord = gl_FragCoord.xy;
+  vec3 color = getPixel(fragCoord, time);
+  // Gamma correction
+  color = pow(color, vec3(0.65));
+  return vec4(color, 1.0);
+}
+}%
