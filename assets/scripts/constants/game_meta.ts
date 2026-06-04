@@ -6,4 +6,5 @@ export const GameMeta = {
         settings: `${name}_settings`,
         ship_debug: `${name}_ship_debug`,
     },
+    frameRate: 60,
 } as const;

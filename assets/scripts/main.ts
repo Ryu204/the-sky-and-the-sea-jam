@@ -1,7 +1,15 @@
-import { _decorator, assetManager, Button, Component, director } from "cc";
+import {
+    _decorator,
+    assetManager,
+    Button,
+    Component,
+    director,
+    game,
+} from "cc";
 import { AllDataStorage } from "./data/all_data";
 import { DefaultStorageBackend } from "./utils/saved_data";
 import { AssetInfo } from "./constants/asset_info";
+import { GameMeta } from "./constants/game_meta";
 const { ccclass, property } = _decorator;
 
 @ccclass("Main")
@@ -9,6 +17,11 @@ export class Main extends Component {
     @property(Button) private btnPlay!: Button;
 
     protected override async onLoad(): Promise<void> {
+        if (!configFps()) {
+            console.warn(
+                `Failed to set expected FPS of the game: ${GameMeta.frameRate}`,
+            );
+        }
         const initResults = await Promise.all([
             initDataStorages(),
             loadBundles(),
@@ -42,4 +55,9 @@ function loadBundles(): Promise<unknown> {
             assetManager.loadBundle(AssetInfo.bundles.gameplay, () => res()),
         ),
     ]);
+}
+
+function configFps() {
+    game.frameRate = GameMeta.frameRate;
+    return game.frameRate === GameMeta.frameRate;
 }
