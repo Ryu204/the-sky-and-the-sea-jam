@@ -1,3 +1,9 @@
+const name = "the_sky_and_the_sea" as const;
+
 export const GameMeta = {
-    name: "the_sky_and_the_sea",
+    name,
+    saveKeys: {
+        settings: `${name}_settings`,
+        ship_debug: `${name}_ship_debug`,
+    },
 } as const;

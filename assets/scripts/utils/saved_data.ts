@@ -165,3 +165,9 @@ export class DataStorageLocalStorageBackend<
         }
     }
 }
+
+export function getDataStorageBackend<Key>(): DataStorageBackend<Key> {
+    return new DataStorageLocalStorageBackend();
+}
+
+export const DefaultStorageBackend = getDataStorageBackend<string>();

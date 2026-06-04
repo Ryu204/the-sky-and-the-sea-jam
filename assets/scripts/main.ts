@@ -1,10 +1,7 @@
 import { _decorator, assetManager, Button, Component, director } from "cc";
 import { AllDataStorage } from "./data/all_data";
-import {
-    DataStorageBackend,
-    DataStorageLocalStorageBackend,
-} from "./utils/saved_data";
-import { GameMeta } from "./constants/game_meta";
+import { DefaultStorageBackend } from "./utils/saved_data";
+import { AssetInfo } from "./constants/asset_info";
 const { ccclass, property } = _decorator;
 
 @ccclass("Main")
@@ -33,19 +30,16 @@ export class Main extends Component {
 }
 
 function initDataStorages(): Promise<boolean> {
-    const storageBackend: DataStorageBackend<string> =
-        new DataStorageLocalStorageBackend();
-    const name = GameMeta.name;
-    return AllDataStorage.init(name, storageBackend);
+    return AllDataStorage.init(DefaultStorageBackend);
 }
 
 function loadBundles(): Promise<unknown> {
     return Promise.all([
         new Promise<void>((res) =>
-            assetManager.loadBundle("gameplay", {}, () => res()),
+            assetManager.loadBundle(AssetInfo.bundles.home, () => res()),
         ),
         new Promise<void>((res) =>
-            assetManager.loadBundle("home", {}, () => res()),
+            assetManager.loadBundle(AssetInfo.bundles.gameplay, () => res()),
         ),
     ]);
 }

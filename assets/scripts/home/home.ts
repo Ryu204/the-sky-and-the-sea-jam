@@ -9,6 +9,7 @@ import {
 } from "cc";
 import { resourcesLoad } from "../utils/async_style";
 import { PopupSettings } from "../popups/settings/popup_settings";
+import { AssetInfo } from "../constants/asset_info";
 const { ccclass, property } = _decorator;
 
 @ccclass("Home")
@@ -31,7 +32,10 @@ export class Home extends Component {
     }
 
     private async openSettings() {
-        const prefab = await resourcesLoad("prefabs/popup_settings", Prefab);
+        const prefab = await resourcesLoad(
+            AssetInfo.prefabs.popups.settings,
+            Prefab,
+        );
         const node = instantiate(prefab);
         node.setParent(this.tempCanvas);
         const settings = node.getComponent(PopupSettings)!;

@@ -1,11 +1,12 @@
+import { GameMeta } from "../constants/game_meta";
 import { Assertion } from "../utils/assertion";
 import { DataStorageBackend } from "../utils/saved_data";
 import { SettingsDataStorage } from "./settings_data";
 
 export class AllDataStorage {
     private static _inst: AllDataStorage | null = null;
-    public static init(gameName: string, backend: DataStorageBackend<string>) {
-        this._inst = new AllDataStorage(gameName, backend);
+    public static init(backend: DataStorageBackend<string>) {
+        this._inst = new AllDataStorage(backend);
         return this._inst.init();
     }
     public static get settings() {
@@ -15,9 +16,9 @@ export class AllDataStorage {
 
     private _settings: SettingsDataStorage<string>;
 
-    private constructor(gameName: string, backend: DataStorageBackend<string>) {
+    private constructor(backend: DataStorageBackend<string>) {
         this._settings = new SettingsDataStorage(
-            `${gameName}_settings`,
+            GameMeta.saveKeys.settings,
             backend,
         );
     }
