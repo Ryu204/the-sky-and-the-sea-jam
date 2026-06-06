@@ -30,7 +30,7 @@ export class Ship extends Component {
         normalizedDir: Vec3 | null,
         angularControlStrength: number,
     ) {
-        if (normalizedDir) {
+        if (normalizedDir && linearControlStrength > math.EPSILON) {
             this.updateAngularAcceleration(
                 normalizedDir,
                 angularControlStrength,
@@ -77,6 +77,7 @@ export class Ship extends Component {
     private setupRigidbody() {
         this.rigidbody = this.addComponent(CustomRigidbody)!;
         this.rigidbody.linearDamping = this.stats!.linearDamping;
+        this.rigidbody.angularDamping = this.stats!.angularDamping;
     }
     public readStats(): DeepReadonly<ShipStats> {
         Assertion.that(this.stats !== null, "Uninitialized");
@@ -95,6 +96,9 @@ export class Ship extends Component {
         switch (key) {
             case "linearDamping":
                 this.rigidbody.linearDamping = value;
+                break;
+            case "angularDamping":
+                this.rigidbody.angularDamping = value;
                 break;
         }
     }

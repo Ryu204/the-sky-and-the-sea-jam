@@ -4,16 +4,16 @@ export const GameplayConst = {
     shipInitialDistFromBottomOverScreenHeight: 0.25,
 
     shipControls: {
-        maxControlRange: 150,
-        minControlRange: 45,
+        maxControlRange: 100,
+        minControlRange: 20,
         maxAngularControlRange: 90,
         minAngularControlRange: 5,
     } as ShipControlStats,
 
     shipMovements: {
-        linearDamping: 0.05,
-        acceleration: 400,
-        angularAcceleration: 450,
-        angularDamping: 0.15,
+        linearDamping: 0.025,
+        acceleration: 300,
+        angularAcceleration: 540,
+        angularDamping: 0.05,
     } as ShipStats,
 } as const;

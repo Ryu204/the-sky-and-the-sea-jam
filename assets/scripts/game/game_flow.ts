@@ -77,12 +77,13 @@ export class GameFlow extends Component {
         const diff = Math.abs(
             smallestOrientationDiff(desiredAngleDeg, currentAngleDeg),
         );
-        return math.clamp01(
+        const normalized = math.clamp01(
             math.inverseLerp(
                 GameplayConst.shipControls.minAngularControlRange,
                 GameplayConst.shipControls.maxAngularControlRange,
                 diff,
             ),
         );
+        return Math.pow(normalized, 0.4);
     }
 }

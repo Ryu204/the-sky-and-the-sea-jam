@@ -110,6 +110,10 @@ export class ShipDebug extends Component {
     @property(EditBox) private editLinearDamping!: EditBox;
     @property(EditBox) private editMinControlRange!: EditBox;
     @property(EditBox) private editMaxControlRange!: EditBox;
+    @property(EditBox) private editAngularAcceleration!: EditBox;
+    @property(EditBox) private editAngularDamping!: EditBox;
+    @property(EditBox) private editMinAngularControlRange!: EditBox;
+    @property(EditBox) private editMaxAngularControlRange!: EditBox;
     @property(Button) private btnExport!: Button;
     @property(Button) private btnImport!: Button;
     @property(Node) private loading!: Node;
@@ -149,14 +153,14 @@ export class ShipDebug extends Component {
     }
 
     private updateDisplayFromData() {
-        this.editLinearDamping.string =
-            this.currentData!.linearDamping?.toString() ?? "";
-        this.editAcceleration.string =
-            this.currentData!.acceleration?.toString() ?? "";
-        this.editMinControlRange.string =
-            this.currentData!.minControlRange?.toString() ?? "";
-        this.editMaxControlRange.string =
-            this.currentData!.maxControlRange?.toString() ?? "";
+        for (const key in this.currentData!) {
+            const thisKey =
+                `edit${key[0]!.toUpperCase()}${key.substring(1)}` as keyof ShipDebug;
+            (this[thisKey] as EditBox).string =
+                this.currentData![
+                    key as keyof typeof this.currentData
+                ]?.toString() ?? "";
+        }
         drawDebugOnGraphics(GameplayConst.shipControls, this.graphics!);
     }
 
@@ -179,12 +183,32 @@ export class ShipDebug extends Component {
             this.onEditBoxReturned,
             this,
         );
+        this.editAngularAcceleration.node.on(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
+        this.editAngularDamping.node.on(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
         this.editMaxControlRange.node.on(
             EditBox.EventType.EDITING_RETURN,
             this.onEditBoxReturned,
             this,
         );
         this.editMinControlRange.node.on(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
+        this.editMinAngularControlRange.node.on(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
+        this.editMaxAngularControlRange.node.on(
             EditBox.EventType.EDITING_RETURN,
             this.onEditBoxReturned,
             this,
@@ -205,12 +229,32 @@ export class ShipDebug extends Component {
             this.onEditBoxReturned,
             this,
         );
+        this.editAngularAcceleration.node.off(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
+        this.editAngularDamping.node.off(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
         this.editMaxControlRange.node.off(
             EditBox.EventType.EDITING_RETURN,
             this.onEditBoxReturned,
             this,
         );
         this.editMinControlRange.node.off(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
+        this.editMaxAngularControlRange.node.off(
+            EditBox.EventType.EDITING_RETURN,
+            this.onEditBoxReturned,
+            this,
+        );
+        this.editMinAngularControlRange.node.off(
             EditBox.EventType.EDITING_RETURN,
             this.onEditBoxReturned,
             this,
@@ -240,6 +284,18 @@ export class ShipDebug extends Component {
             case "minControlRange":
                 GameplayConst.shipControls.minControlRange = number;
                 break;
+            case "angularAcceleration":
+                this.ship!.setStats("angularAcceleration", number);
+                break;
+            case "angularDamping":
+                this.ship!.setStats("angularDamping", number);
+                break;
+            case "maxAngularControlRange":
+                GameplayConst.shipControls.maxAngularControlRange = number;
+                break;
+            case "minAngularControlRange":
+                GameplayConst.shipControls.minAngularControlRange = number;
+                break;
             default:
                 throw new Error("Unimplemented");
         }
@@ -268,6 +324,18 @@ export class ShipDebug extends Component {
                 break;
             case this.editMinControlRange:
                 key = "minControlRange";
+                break;
+            case this.editAngularAcceleration:
+                key = "angularAcceleration";
+                break;
+            case this.editAngularDamping:
+                key = "angularDamping";
+                break;
+            case this.editMaxAngularControlRange:
+                key = "maxAngularControlRange";
+                break;
+            case this.editMinAngularControlRange:
+                key = "minAngularControlRange";
                 break;
             default:
                 throw new Error("Unimplemented");
@@ -326,7 +394,7 @@ function drawDebugOnGraphics(
     stats: DeepReadonly<ShipControlStats>,
     gr: Graphics,
 ) {
-    const lineLength = 150;
+    const lineLength = stats.maxControlRange;
     function drawAngularBand(
         gr2: Graphics,
         minAngle: number,

@@ -8,8 +8,9 @@ const tempVecs = [v3(), v3(), v3()] as const;
 
 @ccclass("CustomRigidbody")
 export class CustomRigidbody extends Component {
-    @property public linearDamping = 0.0;
     @property public targetUpdatesPerSec = 120;
+    @property public linearDamping = 0.0;
+    @property public angularDamping = 0.0;
 
     private accumulatedTime = 0;
     private acceleration = v3();
@@ -43,7 +44,7 @@ export class CustomRigidbody extends Component {
             const newAngle =
                 angle +
                 smallestOrientationDiff(prevAngle, angle) *
-                    (1 - this.linearDamping) +
+                    (1 - this.angularDamping) +
                 this.angularAcceleration * dt * dt;
             prevPos.set(pos);
             this.prevAngle = angle;
