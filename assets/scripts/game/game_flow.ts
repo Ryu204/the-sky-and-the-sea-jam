@@ -4,6 +4,7 @@ import { GameplayConst } from "../constants/gameplay";
 import { MouseTracker } from "../utils/mouse_tracker";
 import { RuntimeEnv } from "../utils/runtime_env";
 import { addShipDebug } from "./ship_debug";
+import { dirToAngleDegFromUp, smallestOrientationDiff } from "../utils/angle";
 const { ccclass, property } = _decorator;
 
 const tempVecs = [v3(), v3()] as const;
@@ -33,9 +34,14 @@ export class GameFlow extends Component {
         let shipLocalDir: Vec3 | null = tempVecs[1]
             .set(mousePos)
             .subtract(this.ship.node.worldPosition);
+        let angularControlStrength = 0;
         const length = shipLocalDir.length();
         if (length > math.EPSILON) {
             shipLocalDir.normalize();
+            angularControlStrength = this.getAngularControlStrength(
+                dirToAngleDegFromUp(shipLocalDir),
+                this.ship.node.angle,
+            );
         } else {
             shipLocalDir = null;
         }
@@ -46,7 +52,12 @@ export class GameFlow extends Component {
                 length,
             ),
         );
-        this.ship.manualUpdate(dt, controlStrength, shipLocalDir);
+        this.ship.manualUpdate(
+            dt,
+            controlStrength,
+            shipLocalDir,
+            angularControlStrength,
+        );
     }
 
     private getShipStartingPosition() {
@@ -56,6 +67,22 @@ export class GameFlow extends Component {
             (-0.5 + GameplayConst.shipInitialDistFromBottomOverScreenHeight) *
                 screenHeight,
             0,
+        );
+    }
+
+    private getAngularControlStrength(
+        desiredAngleDeg: number,
+        currentAngleDeg: number,
+    ) {
+        const diff = Math.abs(
+            smallestOrientationDiff(desiredAngleDeg, currentAngleDeg),
+        );
+        return math.clamp01(
+            math.inverseLerp(
+                GameplayConst.shipControls.minAngularControlRange,
+                GameplayConst.shipControls.maxAngularControlRange,
+                diff,
+            ),
         );
     }
 }

@@ -1,6 +1,7 @@
 import {
     _decorator,
     Button,
+    color,
     Color,
     Component,
     director,
@@ -13,6 +14,8 @@ import {
     KeyCode,
     Node,
     Prefab,
+    toRadian,
+    v3,
     Widget,
 } from "cc";
 import { GameplayConst } from "../constants/gameplay";
@@ -23,15 +26,21 @@ import { Assertion } from "../utils/assertion";
 import { DataStorage, DefaultStorageBackend } from "../utils/saved_data";
 import { ShipControlStats, ShipStats } from "../data/ship_control_stats";
 import { GameMeta } from "../constants/game_meta";
+import { DeepReadonly } from "../utils/custom_types";
+import { angleFromUpToVec3 } from "../utils/angle";
 
 const { property, ccclass } = _decorator;
 
+const tempVecs = [v3()] as const;
+const tempCols = [color()] as const;
+
 namespace Data {
-    const VERSION = 1 as const;
+    const VERSION = 2 as const;
     export type ShipDebugSavedData = Partial<ShipStats & ShipControlStats> & {
         version: typeof VERSION;
     };
     function increaseVersionHandler(data: ShipDebugSavedData) {
+        // For now, all fields are optional, so no need to do any migration`
         switch (data.version as number) {
             default:
                 break;
@@ -125,7 +134,7 @@ export class ShipDebug extends Component {
         this.loading.active = false;
     }
 
-    public override onDestroy() {
+    protected override onDestroy() {
         if (this.isInited) this.disconnectEvents();
     }
 
@@ -214,6 +223,7 @@ export class ShipDebug extends Component {
         const TOGGLE_KEY = KeyCode.SLASH;
         if (!this.isInited || ev.keyCode !== TOGGLE_KEY) return;
         this.node.active = !this.node.active;
+        this.graphics!.enabled = this.node.active;
     }
 
     private applyValueToField(key: ShipDebugSavedKey, number: number) {
@@ -312,13 +322,67 @@ export class ShipDebug extends Component {
     }
 }
 
-function drawDebugOnGraphics(stats: ShipControlStats, graphics: Graphics) {
-    graphics.clear();
-    graphics.strokeColor = Color.RED;
-    graphics.lineWidth = 2;
-    graphics.circle(0, 0, stats.minControlRange);
-    graphics.stroke();
-    graphics.strokeColor = Color.GREEN;
-    graphics.circle(0, 0, stats.maxControlRange);
-    graphics.stroke();
+function drawDebugOnGraphics(
+    stats: DeepReadonly<ShipControlStats>,
+    gr: Graphics,
+) {
+    const lineLength = 100;
+    function drawAngularBand(
+        gr2: Graphics,
+        minAngle: number,
+        maxAngle: number,
+    ) {
+        const start = toRadian(minAngle) + Math.PI / 2;
+        const end = toRadian(maxAngle) + Math.PI / 2;
+        gr2.fillColor = tempCols[0].set(0, 255, 0, 30);
+        gr2.moveTo(0, 0);
+        const dirMin = angleFromUpToVec3(minAngle, tempVecs[0]);
+        gr2.lineTo(dirMin.x, dirMin.y);
+        gr2.arc(0, 0, lineLength, start, end, false);
+        gr2.lineTo(0, 0);
+        gr2.fill();
+    }
+    gr.clear();
+    gr.lineWidth = 2;
+
+    gr.strokeColor = Color.RED;
+    const dirMin = angleFromUpToVec3(
+        stats.minAngularControlRange,
+        tempVecs[0],
+    ).multiplyScalar(lineLength);
+    gr.circle(0, 0, stats.minControlRange);
+    gr.moveTo(0, 0);
+    gr.lineTo(dirMin.x, dirMin.y);
+    gr.moveTo(0, 0);
+    gr.lineTo(-dirMin.x, dirMin.y);
+    gr.stroke();
+
+    gr.strokeColor = Color.GREEN;
+    const dirMax = angleFromUpToVec3(
+        stats.maxAngularControlRange,
+        tempVecs[0],
+    ).multiplyScalar(lineLength);
+    gr.circle(0, 0, stats.maxControlRange);
+    gr.moveTo(0, 0);
+    gr.lineTo(dirMax.x, dirMax.y);
+    gr.moveTo(0, 0);
+    gr.lineTo(-dirMax.x, dirMax.y);
+    console.debug(dirMax);
+    gr.stroke();
+
+    gr.strokeColor = Color.BLUE;
+    gr.moveTo(0, 0);
+    gr.lineTo(0, lineLength);
+    gr.stroke();
+
+    drawAngularBand(
+        gr,
+        stats.maxAngularControlRange,
+        stats.minAngularControlRange,
+    );
+    drawAngularBand(
+        gr,
+        -stats.minAngularControlRange,
+        -stats.maxAngularControlRange,
+    );
 }

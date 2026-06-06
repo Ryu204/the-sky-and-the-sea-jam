@@ -1,9 +1,14 @@
 import { _decorator, Component, math, Quat, v3, Vec3 } from "cc";
 import { CustomRigidbody } from "./custom_rigidbody";
 import { Assertion } from "../utils/assertion";
-import { DeepReadonly } from "../utils/custom_types";
 import { ShipStats } from "../data/ship_control_stats";
-const { ccclass, property } = _decorator;
+import {
+    angleFromUpToVec3,
+    dirToAngleDegFromUp,
+    smallestOrientationDiff,
+} from "../utils/angle";
+import { DeepReadonly } from "../utils/custom_types";
+const { ccclass } = _decorator;
 
 const tempVecs = [v3()] as const;
 
@@ -21,16 +26,59 @@ export class Ship extends Component {
 
     public manualUpdate(
         dt: number,
-        controlStrength: number,
+        linearControlStrength: number,
         normalizedDir: Vec3 | null,
+        angularControlStrength: number,
     ) {
         if (normalizedDir) {
-            this.aimAtDir(normalizedDir);
+            this.updateAngularAcceleration(
+                normalizedDir,
+                angularControlStrength,
+            );
         }
-        this.updatePhysics(dt, controlStrength, normalizedDir);
+        this.updateLinearAcceleration(linearControlStrength);
+        this.rigidbody!.manualUpdate(dt);
     }
 
-    public readStats() {
+    private updateLinearAcceleration(controlStrength: number) {
+        if (controlStrength < math.EPSILON) return;
+        Assertion.that(
+            this.rigidbody !== null && this.stats !== null,
+            "Uninitialized",
+        );
+        const angle = this.node.angle;
+        const movingDir = angleFromUpToVec3(angle, tempVecs[0]);
+        this.rigidbody.addLinearAccelerationTilNextUpdate(
+            Vec3.multiplyScalar<Vec3, Vec3>(
+                tempVecs[0],
+                movingDir,
+                this.stats.acceleration * controlStrength,
+            ),
+        );
+    }
+
+    private updateAngularAcceleration(
+        dir: Vec3,
+        angularControlStrength: number,
+    ): void {
+        if (angularControlStrength < math.EPSILON) return;
+        Assertion.that(this.rigidbody !== null && this.stats !== null);
+        const desiredAngle = dirToAngleDegFromUp(dir);
+        const currentAngle = this.node.angle;
+        const diffAngle = smallestOrientationDiff(currentAngle, desiredAngle);
+        if (Math.abs(diffAngle) < math.EPSILON) return;
+        this.rigidbody.addAngularAccelerationTilNextUpdate(
+            this.stats.angularAcceleration *
+                (diffAngle < 0 ? -1 : 1) *
+                angularControlStrength,
+        );
+    }
+
+    private setupRigidbody() {
+        this.rigidbody = this.addComponent(CustomRigidbody)!;
+        this.rigidbody.linearDamping = this.stats!.linearDamping;
+    }
+    public readStats(): DeepReadonly<ShipStats> {
         Assertion.that(this.stats !== null, "Uninitialized");
         return this.stats;
     }
@@ -49,35 +97,5 @@ export class Ship extends Component {
                 this.rigidbody.linearDamping = value;
                 break;
         }
-    }
-
-    private updatePhysics(
-        dt: number,
-        controlStrength: number,
-        normalizedDir: Vec3 | null,
-    ) {
-        Assertion.that(
-            this.rigidbody !== null && this.stats !== null,
-            "Uninitialized",
-        );
-        if (controlStrength > math.EPSILON && normalizedDir) {
-            this.rigidbody.addAccelerationNextUpdate(
-                Vec3.multiplyScalar<Vec3, Vec3>(
-                    tempVecs[0],
-                    normalizedDir,
-                    this.stats.acceleration * controlStrength,
-                ),
-            );
-        }
-        this.rigidbody.manualUpdate(dt);
-    }
-
-    private aimAtDir(dir: Vec3) {
-        this.node.angle = math.toDegree(Math.atan2(-dir.x, dir.y));
-    }
-
-    private setupRigidbody() {
-        this.rigidbody = this.addComponent(CustomRigidbody)!;
-        this.rigidbody.linearDamping = this.stats!.linearDamping;
     }
 }
