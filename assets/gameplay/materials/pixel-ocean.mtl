@@ -24,6 +24,26 @@
     }
   ],
   "_props": [
-    {}
+    {
+      "seaHeight": 0.6,
+      "seaChoppy": 0.88,
+      "seaSpeed": 0.5,
+      "seaFreq": 0.2712315,
+      "seaSecondaryFreqScale": 6.743,
+      "seaBase": {
+        "__type__": "cc.Color",
+        "r": 6,
+        "g": 19,
+        "b": 39,
+        "a": 255
+      },
+      "seaWaterColor": {
+        "__type__": "cc.Color",
+        "r": 15,
+        "g": 42,
+        "b": 68,
+        "a": 255
+      }
+    }
   ]
 }

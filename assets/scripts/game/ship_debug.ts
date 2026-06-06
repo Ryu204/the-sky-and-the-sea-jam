@@ -326,7 +326,7 @@ function drawDebugOnGraphics(
     stats: DeepReadonly<ShipControlStats>,
     gr: Graphics,
 ) {
-    const lineLength = 100;
+    const lineLength = 150;
     function drawAngularBand(
         gr2: Graphics,
         minAngle: number,
