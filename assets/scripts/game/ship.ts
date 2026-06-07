@@ -1,4 +1,14 @@
-import { _decorator, Component, math, Quat, v3, Vec3 } from "cc";
+import {
+    _decorator,
+    clamp,
+    Component,
+    IVec2Like,
+    math,
+    Quat,
+    v3,
+    Vec3,
+    view,
+} from "cc";
 import { CustomRigidbody } from "./custom_rigidbody";
 import { Assertion } from "../utils/assertion";
 import { ShipStats } from "../data/ship_control_stats";
@@ -37,6 +47,9 @@ export class Ship extends Component {
             );
         }
         this.updateLinearAcceleration(linearControlStrength);
+        this.node.setPosition(
+            clampPositionToView(this.node.getPosition(tempVecs[0])),
+        );
         this.rigidbody!.manualUpdate(dt);
     }
 
@@ -79,6 +92,7 @@ export class Ship extends Component {
         this.rigidbody.linearDamping = this.stats!.linearDamping;
         this.rigidbody.angularDamping = this.stats!.angularDamping;
     }
+
     public readStats(): DeepReadonly<ShipStats> {
         Assertion.that(this.stats !== null, "Uninitialized");
         return this.stats;
@@ -102,4 +116,12 @@ export class Ship extends Component {
                 break;
         }
     }
+}
+
+function clampPositionToView<T extends IVec2Like>(pos: T): T {
+    const origin = view.getVisibleOrigin();
+    const size = view.getVisibleSize();
+    pos.x = clamp(pos.x, origin.x - size.x / 2, origin.x + size.x / 2);
+    pos.y = clamp(pos.y, origin.y - size.y / 2, origin.y + size.y / 2);
+    return pos;
 }
