@@ -1,6 +1,6 @@
 import { _decorator, AudioClip, Component } from "cc";
-import { AllDataStorage } from "../data/all_data";
-import { SoundClipMode, soundClipModeStr } from "../data/sound_mode";
+import { AllDataStorage } from "../../data/all_data";
+import { SoundClipMode, soundClipModeStr } from "../../data/sound_mode";
 const { ccclass, property } = _decorator;
 
 /**

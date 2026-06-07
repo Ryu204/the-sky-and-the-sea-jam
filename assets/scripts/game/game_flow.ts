@@ -1,7 +1,7 @@
 import { _decorator, Component, math, v3, Vec3, view } from "cc";
 import { Ship } from "./ship";
 import { GameplayConst } from "../constants/gameplay";
-import { MouseTracker } from "../utils/mouse_tracker";
+import { MouseTracker } from "../utils/components/mouse_tracker";
 import { RuntimeEnv } from "../utils/runtime_env";
 import { addShipDebug } from "./ship_debug";
 import { dirToAngleDegFromUp, smallestOrientationDiff } from "../utils/angle";
