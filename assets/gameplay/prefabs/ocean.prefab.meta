@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "b4cb0ff1-0e0b-4d4b-8056-28d1784dc652",
+  "uuid": "eb8722dd-1bd9-4f5d-b251-f6ee4ce89889",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "bullet"
+    "syncNodeName": "ocean"
   }
 }

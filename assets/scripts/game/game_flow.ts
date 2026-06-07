@@ -1,63 +1,64 @@
-import { _decorator, Component, math, v3, Vec3, view } from "cc";
+import { _decorator, Component, v3, view } from "cc";
 import { Ship } from "./ship";
 import { GameplayConst } from "../constants/gameplay";
 import { MouseTracker } from "../utils/components/mouse_tracker";
 import { RuntimeEnv } from "../utils/runtime_env";
 import { addShipDebug } from "./ship_debug";
-import { dirToAngleDegFromUp, smallestOrientationDiff } from "../utils/angle";
+import { ShipController } from "./ship_controller";
+import { StageSequence } from "./stage/stage_sequence";
+import { Assertion } from "../utils/assertion";
+import { StageFinal, StageMiddle, StageTutorial } from "./stage/stages";
+import { OceanVisual } from "./ocean_visual";
 const { ccclass, property } = _decorator;
 
-const tempVecs = [v3(), v3()] as const;
+type Fields = {
+    shipController: ShipController;
+    mouseTracker: MouseTracker;
+    stageSeq: StageSequence;
+};
 
 @ccclass("GameFlow")
 export class GameFlow extends Component {
     @property(Ship) private ship!: Ship;
+    @property(OceanVisual) private ocean!: OceanVisual;
 
-    private mouseTracker!: MouseTracker;
+    private fields: ({ isInited: true } & Fields) | { isInited: false } = {
+        isInited: false,
+    };
 
     public init() {
+        Assertion.that(!this.fields.isInited, "Double init");
         this.ship.init(
             this.getShipStartingPosition(),
             structuredClone(GameplayConst.shipMovements),
         );
-        this.mouseTracker =
+        const mouseTracker =
             this.getComponent(MouseTracker) || this.addComponent(MouseTracker)!;
+        const stages = [
+            new StageTutorial(),
+            new StageMiddle(),
+            new StageFinal(),
+        ];
+        this.fields = {
+            isInited: true,
+            mouseTracker,
+            shipController: new ShipController(this.ship, mouseTracker),
+            stageSeq: new StageSequence(stages, {
+                ocean: this.ocean,
+                stageCount: stages.length,
+            }),
+        };
         if (RuntimeEnv.isDebug) {
             addShipDebug(this.ship);
         }
+
+        this.fields.stageSeq.start();
     }
 
     public manuallyUpdate(dt: number) {
-        const mousePos = tempVecs[0];
-        if (!this.mouseTracker!.getMousePosition(mousePos)) return;
-
-        let shipLocalDir: Vec3 | null = tempVecs[1]
-            .set(mousePos)
-            .subtract(this.ship.node.worldPosition);
-        let angularControlStrength = 0;
-        const length = shipLocalDir.length();
-        if (length > math.EPSILON) {
-            shipLocalDir.normalize();
-            angularControlStrength = this.getAngularControlStrength(
-                dirToAngleDegFromUp(shipLocalDir),
-                this.ship.node.angle,
-            );
-        } else {
-            shipLocalDir = null;
-        }
-        const controlStrength = math.clamp01(
-            math.inverseLerp(
-                GameplayConst.shipControls.minControlRange,
-                GameplayConst.shipControls.maxControlRange,
-                length,
-            ),
-        );
-        this.ship.manualUpdate(
-            dt,
-            controlStrength,
-            shipLocalDir,
-            angularControlStrength,
-        );
+        Assertion.that(this.fields.isInited);
+        this.fields.shipController.manuallyUpdate(dt);
+        this.fields.stageSeq.update(dt);
     }
 
     private getShipStartingPosition() {
@@ -68,22 +69,5 @@ export class GameFlow extends Component {
                 screenHeight,
             0,
         );
-    }
-
-    private getAngularControlStrength(
-        desiredAngleDeg: number,
-        currentAngleDeg: number,
-    ) {
-        const diff = Math.abs(
-            smallestOrientationDiff(desiredAngleDeg, currentAngleDeg),
-        );
-        const normalized = math.clamp01(
-            math.inverseLerp(
-                GameplayConst.shipControls.minAngularControlRange,
-                GameplayConst.shipControls.maxAngularControlRange,
-                diff,
-            ),
-        );
-        return Math.pow(normalized, 0.4);
     }
 }
