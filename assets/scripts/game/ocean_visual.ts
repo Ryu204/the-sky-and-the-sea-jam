@@ -6,7 +6,10 @@ import {
     lerp,
     Material,
     Sprite,
+    tween,
+    Tween,
 } from "cc";
+import { GameplayConst } from "../constants/gameplay";
 const { ccclass, property } = _decorator;
 
 @ccclass("OceanVisualData")
@@ -64,6 +67,8 @@ export class OceanVisual extends Component {
     @property(OceanVisualData) private maxData = new OceanVisualData();
     @property(Sprite) private oceanSprite!: Sprite;
 
+    private initialRatio = { value: 0 };
+
     private _sharedMaterial: Material | null = null;
     private get sharedMaterial(): Material {
         return (this._sharedMaterial ??=
@@ -72,11 +77,23 @@ export class OceanVisual extends Component {
 
     /** @param ratio lerp ratio from min data to max data */
     public animateToNewRatio(ratio: number) {
-        OceanVisualData.lerp(
-            tempDatas[0],
-            this.minData,
-            this.maxData,
-            ratio,
-        ).updateMaterial(this.sharedMaterial);
+        Tween.stopAllByTarget(this.initialRatio);
+        tween(this.initialRatio)
+            .to(
+                GameplayConst.ocean.transitionTimeSeconds,
+                { value: ratio },
+                {
+                    onUpdate: (target) => {
+                        OceanVisualData.lerp(
+                            tempDatas[0],
+                            this.minData,
+                            this.maxData,
+                            target!.value,
+                        ).updateMaterial(this.sharedMaterial);
+                    },
+                    easing: "sineInOut",
+                },
+            )
+            .start();
     }
 }

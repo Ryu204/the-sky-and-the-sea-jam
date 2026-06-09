@@ -1,14 +1,15 @@
-import { _decorator, Component, v3, view } from "cc";
+import { _decorator, Component, PhysicsSystem2D, v3, view } from "cc";
 import { Ship } from "./ship";
 import { GameplayConst } from "../constants/gameplay";
 import { MouseTracker } from "../utils/components/mouse_tracker";
-import { RuntimeEnv } from "../utils/runtime_env";
 import { addShipDebug } from "./ship_debug";
 import { ShipController } from "./ship_controller";
 import { StageSequence } from "./stage/stage_sequence";
 import { Assertion } from "../utils/assertion";
 import { StageFinal, StageMiddle, StageTutorial } from "./stage/stages";
 import { OceanVisual } from "./ocean_visual";
+import { GameMeta } from "../constants/game_meta";
+import { configPhysicsSystem } from "./physics_system_settings";
 const { ccclass, property } = _decorator;
 
 type Fields = {
@@ -26,8 +27,9 @@ export class GameFlow extends Component {
         isInited: false,
     };
 
-    public init() {
+    public init(ps: PhysicsSystem2D) {
         Assertion.that(!this.fields.isInited, "Double init");
+        configPhysicsSystem(ps);
         this.ship.init(
             this.getShipStartingPosition(),
             structuredClone(GameplayConst.shipMovements),
@@ -46,9 +48,10 @@ export class GameFlow extends Component {
             stageSeq: new StageSequence(stages, {
                 ocean: this.ocean,
                 stageCount: stages.length,
+                ship: this.ship,
             }),
         };
-        if (RuntimeEnv.isDebug) {
+        if (GameMeta.shownEditingTarget === "ship") {
             addShipDebug(this.ship);
         }
 

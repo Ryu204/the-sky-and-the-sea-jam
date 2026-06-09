@@ -18,12 +18,15 @@ import {
     smallestOrientationDiff,
 } from "../utils/angle";
 import { DeepReadonly } from "../utils/custom_types";
-const { ccclass } = _decorator;
+import { DetectRange } from "./detect_range";
+import { HasDetectionRange } from "./ship_interfaces";
+const { ccclass, property } = _decorator;
 
 const tempVecs = [v3()] as const;
 
 @ccclass("Ship")
-export class Ship extends Component {
+export class Ship extends Component implements HasDetectionRange {
+    @property(DetectRange) private detectionRange!: DetectRange;
     private rigidbody: CustomRigidbody | null = null;
     private stats: ShipStats | null = null;
 
@@ -51,6 +54,10 @@ export class Ship extends Component {
             clampPositionToView(this.node.getPosition(tempVecs[0])),
         );
         this.rigidbody!.manualUpdate(dt);
+    }
+
+    public setDetectionRange(rangeInWorldUnit: number) {
+        this.detectionRange.setRange(rangeInWorldUnit);
     }
 
     private updateLinearAcceleration(controlStrength: number) {

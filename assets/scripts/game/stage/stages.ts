@@ -1,3 +1,4 @@
+import { GameplayConst } from "../../constants/gameplay";
 import { Stage, StageEndState } from "./stage";
 
 class BaseStage extends Stage {
@@ -8,6 +9,15 @@ class BaseStage extends Stage {
 
     public override onStarted(): void {
         this.setOceanVisual();
+        const ship = this.getResources().ship;
+        const range =
+            GameplayConst.detectionRangeByStage[
+                Math.min(
+                    this.getIndex(),
+                    GameplayConst.detectionRangeByStage.length - 1,
+                )
+            ]!;
+        ship.setDetectionRange(range);
     }
 
     public override update(dt: number): StageEndState | null {
@@ -31,4 +41,8 @@ export class StageTutorial extends BaseStage {}
 
 export class StageMiddle extends BaseStage {}
 
-export class StageFinal extends BaseStage {}
+export class StageFinal extends BaseStage {
+    public override update(_dt: number): StageEndState | null {
+        return null;
+    }
+}

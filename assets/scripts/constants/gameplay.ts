@@ -16,4 +16,10 @@ export const GameplayConst = {
         angularAcceleration: 540,
         angularDamping: 0.05,
     } as ShipStats,
+
+    ocean: {
+        transitionTimeSeconds: 15,
+    },
+
+    detectionRangeByStage: [50, 80, 120],
 } as const;

@@ -5,6 +5,7 @@ export const AssetInfo = {
     },
     prefabs: {
         shipDebug: "debug/ship_debug",
+        gameplayDebug: "debug/gameplay_debug",
         popups: {
             settings: "prefabs/popup_settings",
         },

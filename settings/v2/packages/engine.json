@@ -79,8 +79,8 @@
             "_value": false
           },
           "physics-2d": {
-            "_value": false,
-            "_option": "physics-2d-box2d"
+            "_value": true,
+            "_option": "physics-2d-builtin"
           },
           "physics-2d-box2d": {
             "_value": false
@@ -202,6 +202,7 @@
           "graphics",
           "meshopt",
           "particle",
+          "physics-2d-builtin",
           "profiler",
           "tween",
           "ui"
