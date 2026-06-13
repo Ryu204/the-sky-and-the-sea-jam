@@ -10,12 +10,14 @@ import { StageFinal, StageMiddle, StageTutorial } from "./stage/stages";
 import { OceanVisual } from "./ocean_visual";
 import { GameMeta } from "../constants/game_meta";
 import { configPhysicsSystem } from "./physics_system_settings";
+import { EnemySpawner } from "./enemy/enemy_spawner";
 const { ccclass, property } = _decorator;
 
 type Fields = {
     shipController: ShipController;
     mouseTracker: MouseTracker;
     stageSeq: StageSequence;
+    enemySpawner: EnemySpawner;
 };
 
 @ccclass("GameFlow")
@@ -50,6 +52,7 @@ export class GameFlow extends Component {
                 stageCount: stages.length,
                 ship: this.ship,
             }),
+            enemySpawner: new EnemySpawner(),
         };
         if (GameMeta.shownEditingTarget === "ship") {
             addShipDebug(this.ship);
