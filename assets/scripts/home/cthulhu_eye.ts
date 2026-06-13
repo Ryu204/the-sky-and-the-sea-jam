@@ -41,7 +41,9 @@ export class CthulhuEye extends Component {
         const normalizedDir = dirToMouse.multiplyScalar(1 / dirLen);
         const fakePerspectiveFixDir = normalizedDir;
         fakePerspectiveFixDir.x *= 0.75;
-        fakePerspectiveFixDir.multiplyScalar(this.eyeBallRadius);
+        fakePerspectiveFixDir
+            .multiplyScalar(this.eyeBallRadius)
+            .multiply(this.node.scale);
         this.targetPosition.set(
             Vec3.add(tempVecs[2], this.initialPosition, fakePerspectiveFixDir),
         );

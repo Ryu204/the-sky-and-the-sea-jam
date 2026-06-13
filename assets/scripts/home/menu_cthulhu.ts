@@ -1,40 +1,44 @@
-import { _decorator, Animation, AnimationClip, Component, Node } from "cc";
+import { _decorator, Component, math } from "cc";
 import { CthulhuEye } from "./cthulhu_eye";
 import { MouseTracker } from "../utils/components/mouse_tracker";
+import { standardNormalDistribution01 } from "../utils/random";
 
 const { property, ccclass } = _decorator;
 
 @ccclass("MenuCthulhu")
 export class MenuCthulhu extends Component {
     @property([CthulhuEye]) private eyes: CthulhuEye[] = [];
+    @property private desiredActiveEyeCount = 1;
     @property private eyeBallRadius = 0;
-    @property({
-        type: Animation,
-        group: { style: "section", name: "settings" },
-    })
-    private settingsAnimation!: Animation;
-    @property({
-        type: AnimationClip,
-        group: { style: "section", name: "settings" },
-    })
-    private settingsAnimationClip!: AnimationClip;
 
     public init(mouseTracker: MouseTracker) {
-        for (const eye of this.eyes) {
+        for (let i = 0; i < this.eyes.length; ++i) {
+            const eye = this.eyes[i]!;
             eye.init(mouseTracker, this.eyeBallRadius);
+            this.setupEyeActiveCycle(i);
         }
     }
 
     public manuallyUpdate(dt: number) {
-        for (const eye of this.eyes) {
-            eye.manuallyUpdate(dt);
+        for (let i = 0; i < this.eyes.length; ++i) {
+            if (!this.eyes[i]!.node.active) {
+                continue;
+            }
+            this.eyes[i]!.manuallyUpdate(dt);
         }
     }
 
-    public zoomToSettingsBackground(): Promise<void> {
-        let resolve: () => void;
-        const promise = new Promise<void>((res) => (resolve = res));
-        this.settingsAnimation.once(Animation.EventType.FINISHED, resolve);
-        this.settingsAnimation.crossFade(this.settingsAnimationClip.name, 0.05);
+    private setupEyeActiveCycle(index: number) {
+        const eye = this.eyes[index]!;
+        const targetActiveProbability =
+            this.desiredActiveEyeCount / this.eyes.length;
+        const recheckActiveState = () => {
+            eye.node.active = Math.random() < targetActiveProbability;
+            const delay = math.EPSILON + 15 * standardNormalDistribution01();
+            this.scheduleOnce(() =>
+                this.scheduleOnce(recheckActiveState, delay),
+            );
+        };
+        recheckActiveState();
     }
 }

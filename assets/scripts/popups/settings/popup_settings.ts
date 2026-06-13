@@ -1,4 +1,4 @@
-import { _decorator, Component, math, Slider } from "cc";
+import { _decorator, Button, Component, math, Slider } from "cc";
 import { AllDataStorage } from "../../data/all_data";
 import { ButtonToggle } from "./button_toggle";
 import { SoundClipMode } from "../../data/sound_mode";
@@ -10,10 +10,13 @@ export class PopupSettings extends Component {
     @property(Slider) private sliderSoundVolume!: Slider;
     @property(Slider) private sliderMasterVolume!: Slider;
     @property(ButtonToggle) private toggleMonoStereo!: ButtonToggle;
+    @property(Button) private btnClose!: ButtonToggle;
 
     private wasHandlerSetup = false;
+    private onClose?: Function;
 
-    public init() {
+    public init(onClose?: Function) {
+        this.onClose = onClose;
         const currentMasterVol =
             AllDataStorage.settings.getMasterVolumePercent();
         const currentMusicVol = AllDataStorage.settings.getMusicPercent();
@@ -46,6 +49,11 @@ export class PopupSettings extends Component {
                 this.onToggleMonoStereoChanged,
                 this,
             );
+            this.btnClose.node.on(
+                Button.EventType.CLICK,
+                this.onBtnCloseClicked,
+                this,
+            );
             this.wasHandlerSetup = true;
         }
     }
@@ -68,5 +76,10 @@ export class PopupSettings extends Component {
     private onSliderMasterVolumeChanged(slider: Slider) {
         const newPercent = Math.floor(100 * slider.progress);
         AllDataStorage.settings.setMusicMasterVolumePercent(newPercent);
+    }
+
+    private onBtnCloseClicked() {
+        this.onClose?.();
+        this.node.destroy();
     }
 }

@@ -50,11 +50,12 @@ export class Home extends Component {
         );
         LoadingSingleton.inst.hide();
         const node = instantiate(prefab);
-        node.setParent(this.popupCanvas);
-        node.active = false;
-        this.menuCthulhu.zoomToSettingsBackground();
+        node.setParent(this.popupCanvas, false);
+        node.setPosition(this.btnParent.position);
         this.btnParent.active = false;
         const settings = node.getComponent(PopupSettings)!;
-        settings.init();
+        settings.init(() => {
+            this.btnParent.active = true;
+        });
     }
 }

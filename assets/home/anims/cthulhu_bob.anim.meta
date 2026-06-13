@@ -2,12 +2,12 @@
   "ver": "2.0.4",
   "importer": "animation-clip",
   "imported": true,
-  "uuid": "6cdc6eb5-c752-426b-bfce-2bf939169129",
+  "uuid": "597a441f-a512-4c2a-8dce-2dc5501da12d",
   "files": [
     ".bin"
   ],
   "subMetas": {},
   "userData": {
-    "name": "menu_cthulhu_settings"
+    "name": "cthulhu_bob"
   }
 }
