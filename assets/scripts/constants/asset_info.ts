@@ -1,4 +1,8 @@
 export const AssetInfo = {
+    scenes: {
+        home: "home",
+        gameplay: "gameplay",
+    },
     bundles: {
         home: "home",
         gameplay: "gameplay",

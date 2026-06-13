@@ -1,21 +1,13 @@
-import {
-    _decorator,
-    assetManager,
-    Button,
-    Component,
-    director,
-    game,
-} from "cc";
+import { _decorator, assetManager, Component, game, Input, input } from "cc";
 import { AllDataStorage } from "./data/all_data";
 import { DefaultStorageBackend } from "./utils/saved_data";
 import { AssetInfo } from "./constants/asset_info";
 import { GameMeta } from "./constants/game_meta";
-const { ccclass, property } = _decorator;
+import { DirectorWrapper } from "./utils/director_wrapper";
+const { ccclass } = _decorator;
 
 @ccclass("Main")
 export class Main extends Component {
-    @property(Button) private btnPlay!: Button;
-
     protected override async onLoad(): Promise<void> {
         if (!configFps()) {
             console.warn(
@@ -33,12 +25,16 @@ export class Main extends Component {
         this.startGame();
     }
 
-    public goToGameplay(): void {
-        director.loadScene("home");
+    protected override onDestroy(): void {
+        input.off(Input.EventType.TOUCH_END, this.goToHome, this);
+    }
+
+    private goToHome(): void {
+        DirectorWrapper.goToScene(AssetInfo.scenes.home);
     }
 
     private startGame() {
-        this.btnPlay.node.on(Button.EventType.CLICK, this.goToGameplay, this);
+        input.on(Input.EventType.TOUCH_END, this.goToHome, this);
     }
 }
 

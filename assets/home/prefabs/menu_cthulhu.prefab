@@ -453,7 +453,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 0,
+      "y": 141.259,
       "z": 0
     },
     "_lrot": {
@@ -465,9 +465,9 @@
     },
     "_lscale": {
       "__type__": "cc.Vec3",
-      "x": 1.25,
-      "y": 1.25,
-      "z": 1.25
+      "x": 1,
+      "y": 1,
+      "z": 1
     },
     "_mobility": 0,
     "_layer": 33554432,
@@ -1007,8 +1007,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 766,
-      "height": 860
+      "width": 1280,
+      "height": 1440
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1044,7 +1044,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "bebec7bf-3bc7-4f31-b630-3ba97a2f0802@f9941",
+      "__uuid__": "2a247cfd-a4dc-4100-a6bd-457b395c50d7@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -1082,6 +1082,10 @@
     "_clips": [
       {
         "__uuid__": "accd8823-b260-4518-998f-c00ce4e29073",
+        "__expectedType__": "cc.AnimationClip"
+      },
+      {
+        "__uuid__": "6cdc6eb5-c752-426b-bfce-2bf939169129",
         "__expectedType__": "cc.AnimationClip"
       }
     ],
@@ -1153,6 +1157,13 @@
       null
     ],
     "eyeBallRadius": 10,
+    "settingsAnimation": {
+      "__id__": 52
+    },
+    "settingsAnimationClip": {
+      "__uuid__": "6cdc6eb5-c752-426b-bfce-2bf939169129",
+      "__expectedType__": "cc.AnimationClip"
+    },
     "_id": ""
   },
   {

@@ -1,25 +1,20 @@
-import {
-    _decorator,
-    Button,
-    Component,
-    director,
-    instantiate,
-    Node,
-    Prefab,
-} from "cc";
+import { _decorator, Button, Component, instantiate, Node, Prefab } from "cc";
 import { resourcesLoad } from "../utils/async_style";
 import { PopupSettings } from "../popups/settings/popup_settings";
 import { AssetInfo } from "../constants/asset_info";
 import { MenuCthulhu } from "./menu_cthulhu";
 import { MouseTracker } from "../utils/components/mouse_tracker";
+import { DirectorWrapper } from "../utils/director_wrapper";
+import { LoadingSingleton } from "../utils/components/loading_singleton";
 const { ccclass, property } = _decorator;
 
 @ccclass("Home")
 export class Home extends Component {
+    @property(Node) private btnParent!: Node;
     @property(Button) private btnPlay!: Button;
     @property(Button) private btnSettings!: Button;
-    @property(Node) private tempCanvas!: Node;
     @property(MenuCthulhu) private menuCthulhu!: MenuCthulhu;
+    @property(Node) private popupCanvas!: Node;
 
     private mouseTracker!: MouseTracker;
 
@@ -44,16 +39,21 @@ export class Home extends Component {
     }
 
     private goToGame() {
-        director.loadScene("gameplay");
+        DirectorWrapper.goToScene(AssetInfo.scenes.gameplay);
     }
 
     private async openSettings() {
+        LoadingSingleton.inst.show();
         const prefab = await resourcesLoad(
             AssetInfo.prefabs.popups.settings,
             Prefab,
         );
+        LoadingSingleton.inst.hide();
         const node = instantiate(prefab);
-        node.setParent(this.tempCanvas);
+        node.setParent(this.popupCanvas);
+        node.active = false;
+        this.menuCthulhu.zoomToSettingsBackground();
+        this.btnParent.active = false;
         const settings = node.getComponent(PopupSettings)!;
         settings.init();
     }
